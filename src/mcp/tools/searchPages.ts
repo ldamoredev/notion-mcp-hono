@@ -1,9 +1,9 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { NotionGateway } from '../../notion/gateway.js';
-import { textResult, withNotionError } from '../toolResult.js';
+import { textResult, type ToolRunner } from '../toolResult.js';
 
-export function registerSearchPagesTool(server: McpServer, gateway: NotionGateway): void {
+export function registerSearchPagesTool(server: McpServer, gateway: NotionGateway, run: ToolRunner): void {
   server.registerTool(
     'search_pages',
     {
@@ -28,7 +28,7 @@ export function registerSearchPagesTool(server: McpServer, gateway: NotionGatewa
       annotations: { readOnlyHint: true },
     },
     async ({ query, limit }) =>
-      withNotionError(async () => {
+      run('search_pages', async () => {
         const pages =
           limit === undefined
             ? await gateway.searchPages(query)

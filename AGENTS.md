@@ -91,10 +91,10 @@ Phases 1–4 are done (see STATUS.md). What exists and what phase 5 must do:
    `NOTION_TOKEN` is unset (same pattern as `MCP_API_KEY`).
 2. Implement the 5 tools in `src/mcp/` (one module per tool or a `tools/` dir), TDD,
    **one tool at a time**: failing test → implement → green, then next tool.
-3. Tool handlers catch `NotionError` and return it in-band:
-   `{ isError: true, content: [{ type: 'text', text: err.message }] }` — never throw
-   raw errors at the protocol layer; the LLM should be able to read and self-correct.
-   Let unexpected (non-NotionError) errors propagate.
+3. Tool handlers run through `createToolRunner` (src/mcp/toolResult.ts): `NotionError`
+   returns in-band with its curated message; unexpected errors return a generic in-band
+   message and are logged server-side (the SDK would otherwise echo raw internals to
+   the client). Never bypass the runner.
 4. Update the integration test(s) to inject a fake `NotionGateway` (in-memory object);
    keep the existing test altitudes: MCP layer via `InMemoryTransport`
    (see `src/mcp/server.test.ts`), HTTP via real SDK client

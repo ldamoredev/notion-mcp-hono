@@ -1,9 +1,9 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { NotionGateway } from '../../notion/gateway.js';
-import { textResult, withNotionError } from '../toolResult.js';
+import { textResult, type ToolRunner } from '../toolResult.js';
 
-export function registerAppendBlocksTool(server: McpServer, gateway: NotionGateway): void {
+export function registerAppendBlocksTool(server: McpServer, gateway: NotionGateway, run: ToolRunner): void {
   server.registerTool(
     'append_blocks',
     {
@@ -26,7 +26,7 @@ export function registerAppendBlocksTool(server: McpServer, gateway: NotionGatew
       annotations: { destructiveHint: false, idempotentHint: false },
     },
     async ({ page_id, markdown }) =>
-      withNotionError(async () => {
+      run('append_blocks', async () => {
         await gateway.appendMarkdown(page_id, markdown);
         return textResult({ page_id, appended: true });
       }),

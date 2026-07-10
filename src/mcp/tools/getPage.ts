@@ -1,9 +1,9 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { NotionGateway } from '../../notion/gateway.js';
-import { textResult, withNotionError } from '../toolResult.js';
+import { textResult, type ToolRunner } from '../toolResult.js';
 
-export function registerGetPageTool(server: McpServer, gateway: NotionGateway): void {
+export function registerGetPageTool(server: McpServer, gateway: NotionGateway, run: ToolRunner): void {
   server.registerTool(
     'get_page',
     {
@@ -21,6 +21,6 @@ export function registerGetPageTool(server: McpServer, gateway: NotionGateway): 
       annotations: { readOnlyHint: true },
     },
     async ({ page_id }) =>
-      withNotionError(async () => textResult(await gateway.getPageMarkdown(page_id))),
+      run('get_page', async () => textResult(await gateway.getPageMarkdown(page_id))),
   );
 }

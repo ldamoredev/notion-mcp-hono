@@ -1,9 +1,9 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { NotionGateway } from '../../notion/gateway.js';
-import { textResult, withNotionError } from '../toolResult.js';
+import { textResult, type ToolRunner } from '../toolResult.js';
 
-export function registerCreatePageTool(server: McpServer, gateway: NotionGateway): void {
+export function registerCreatePageTool(server: McpServer, gateway: NotionGateway, run: ToolRunner): void {
   server.registerTool(
     'create_page',
     {
@@ -34,7 +34,7 @@ export function registerCreatePageTool(server: McpServer, gateway: NotionGateway
       annotations: { destructiveHint: false, idempotentHint: false },
     },
     async ({ parent_type, parent_id, title, markdown }) =>
-      withNotionError(async () => {
+      run('create_page', async () => {
         const page = await gateway.createPage({
           parent: { type: parent_type, id: parent_id },
           title,

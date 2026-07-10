@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createApp } from './app.js';
+import { createLogger } from './logger.js';
 import type { NotionGateway } from './notion/gateway.js';
 
 const KEY = 'test-api-key';
@@ -78,6 +79,52 @@ describe('auth on /mcp', () => {
     const res = await app().request('/mcp');
 
     expect(res.status).toBe(401);
+  });
+});
+
+describe('request logging', () => {
+  const capturedApp = () => {
+    const lines: string[] = [];
+    const logged = createApp({
+      mcpApiKey: KEY,
+      gateway: unusedGateway,
+      logger: createLogger((line) => lines.push(line)),
+    });
+    return { lines, logged };
+  };
+
+  it('logs method, path, status, and duration for /mcp requests', async () => {
+    const { lines, logged } = capturedApp();
+
+    await logged.request('/mcp', { method: 'POST', body: '{}' });
+
+    const entries = lines.map((l) => JSON.parse(l) as Record<string, unknown>);
+    const request = entries.find((e) => e.event === 'http_request');
+    expect(request).toMatchObject({ method: 'POST', path: '/mcp', status: 401 });
+    expect(request?.durationMs).toBeTypeOf('number');
+  });
+
+  it('does not log /health (Railway polls it)', async () => {
+    const { lines, logged } = capturedApp();
+
+    await logged.request('/health');
+
+    expect(lines).toHaveLength(0);
+  });
+});
+
+describe('request body limit', () => {
+  it('rejects oversized /mcp bodies with 413 before parsing', async () => {
+    const res = await app().request('/mcp', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${KEY}`,
+      },
+      body: 'x'.repeat(3 * 1024 * 1024),
+    });
+
+    expect(res.status).toBe(413);
   });
 });
 

@@ -1,11 +1,11 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { NotionGateway, QueryDatabaseParams } from '../../notion/gateway.js';
-import { textResult, withNotionError } from '../toolResult.js';
+import { textResult, type ToolRunner } from '../toolResult.js';
 
 const jsonObject = z.record(z.string(), z.unknown());
 
-export function registerQueryDatabaseTool(server: McpServer, gateway: NotionGateway): void {
+export function registerQueryDatabaseTool(server: McpServer, gateway: NotionGateway, run: ToolRunner): void {
   server.registerTool(
     'query_database',
     {
@@ -44,7 +44,7 @@ export function registerQueryDatabaseTool(server: McpServer, gateway: NotionGate
       annotations: { readOnlyHint: true },
     },
     async ({ database_id, filter, sorts, page_size, start_cursor }) =>
-      withNotionError(async () => {
+      run('query_database', async () => {
         const params: QueryDatabaseParams = {
           databaseId: database_id,
           ...(filter !== undefined && { filter }),
