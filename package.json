@@ -1,0 +1,32 @@
+{
+  "name": "notion-mcp-hono",
+  "version": "0.1.0",
+  "description": "Remote MCP server exposing Notion as tools — TypeScript, Hono, Streamable HTTP",
+  "type": "module",
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@hono/node-server": "^2.0.8",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@notionhq/client": "^5.23.0",
+    "hono": "^4.12.29",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "tsx": "^4.23.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}
