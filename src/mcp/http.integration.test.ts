@@ -10,12 +10,23 @@ import { createApp } from '../app.js';
 // exactOptionalPropertyTypes. Safe at runtime; cast at this one boundary.
 const asTransport = (t: StreamableHTTPClientTransport) => t as Transport;
 
+const KEY = 'integration-test-key';
+
+const authedTransport = (url: URL) =>
+  asTransport(
+    new StreamableHTTPClientTransport(url, {
+      requestInit: { headers: { authorization: `Bearer ${KEY}` } },
+    }),
+  );
+
 let server: ServerType;
 let mcpUrl: URL;
 
 beforeAll(async () => {
   const port = await new Promise<number>((resolve) => {
-    server = serve({ fetch: createApp().fetch, port: 0 }, (info) => resolve(info.port));
+    server = serve({ fetch: createApp({ mcpApiKey: KEY }).fetch, port: 0 }, (info) =>
+      resolve(info.port),
+    );
   });
   mcpUrl = new URL(`http://127.0.0.1:${port}/mcp`);
 });
@@ -27,7 +38,7 @@ afterAll(() => {
 describe('Streamable HTTP endpoint', () => {
   it('accepts a real MCP client: initialize, list tools, call ping', async () => {
     const client = new Client({ name: 'integration-client', version: '0.0.0' });
-    await client.connect(asTransport(new StreamableHTTPClientTransport(mcpUrl)));
+    await client.connect(authedTransport(mcpUrl));
 
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name)).toContain('ping');
@@ -41,7 +52,7 @@ describe('Streamable HTTP endpoint', () => {
   it('handles two independent clients (stateless: no shared session)', async () => {
     const connect = async (name: string) => {
       const client = new Client({ name, version: '0.0.0' });
-      await client.connect(asTransport(new StreamableHTTPClientTransport(mcpUrl)));
+      await client.connect(authedTransport(mcpUrl));
       return client;
     };
     const [a, b] = await Promise.all([connect('client-a'), connect('client-b')]);
@@ -57,13 +68,23 @@ describe('Streamable HTTP endpoint', () => {
     await Promise.all([a.close(), b.close()]);
   });
 
-  it('rejects GET and DELETE with 405 (no sessions to stream or terminate)', async () => {
-    const get = await fetch(mcpUrl, { headers: { accept: 'text/event-stream' } });
+  it('rejects an unauthenticated MCP client', async () => {
+    const client = new Client({ name: 'anon-client', version: '0.0.0' });
+
+    await expect(
+      client.connect(asTransport(new StreamableHTTPClientTransport(mcpUrl))),
+    ).rejects.toThrow(/unauthorized/i);
+  });
+
+  it('rejects GET and DELETE with 405 when authenticated (no sessions to stream or terminate)', async () => {
+    const headers = { authorization: `Bearer ${KEY}`, accept: 'text/event-stream' };
+
+    const get = await fetch(mcpUrl, { headers });
     expect(get.status).toBe(405);
     expect(get.headers.get('allow')).toBe('POST');
     await get.body?.cancel();
 
-    const del = await fetch(mcpUrl, { method: 'DELETE' });
+    const del = await fetch(mcpUrl, { method: 'DELETE', headers });
     expect(del.status).toBe(405);
     await del.body?.cancel();
   });
