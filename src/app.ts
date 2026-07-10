@@ -2,12 +2,14 @@ import { StreamableHTTPTransport } from '@hono/mcp';
 import { Hono } from 'hono';
 import { bearerAuth } from './auth.js';
 import { createMcpServer } from './mcp/server.js';
+import type { NotionGateway } from './notion/gateway.js';
 
 export interface AppConfig {
   mcpApiKey: string;
+  gateway: NotionGateway;
 }
 
-export function createApp({ mcpApiKey }: AppConfig): Hono {
+export function createApp({ mcpApiKey, gateway }: AppConfig): Hono {
   const app = new Hono();
 
   app.get('/health', (c) => c.json({ status: 'ok' }));
@@ -17,7 +19,7 @@ export function createApp({ mcpApiKey }: AppConfig): Hono {
   // Stateless Streamable HTTP: a fresh server + transport per request, no session
   // map — every request is self-contained, so the app scales horizontally.
   app.post('/mcp', async (c) => {
-    const server = createMcpServer();
+    const server = createMcpServer(gateway);
     // No sessionIdGenerator → stateless mode (no Mcp-Session-Id issued).
     const transport = new StreamableHTTPTransport();
     await server.connect(transport);

@@ -4,6 +4,7 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../app.js';
+import type { NotionGateway } from '../notion/gateway.js';
 
 // The SDK declares StreamableHTTPClientTransport.sessionId as `string | undefined`,
 // which is not assignable to Transport's optional `sessionId?: string` under
@@ -11,6 +12,29 @@ import { createApp } from '../app.js';
 const asTransport = (t: StreamableHTTPClientTransport) => t as Transport;
 
 const KEY = 'integration-test-key';
+
+const gateway: NotionGateway = {
+  searchPages: async (query) => [
+    {
+      id: `page-${query}`,
+      title: query,
+      url: null,
+      lastEditedTime: '2026-07-10T12:00:00.000Z',
+    },
+  ],
+  getPageMarkdown: async () => {
+    throw new Error('Unexpected getPageMarkdown call');
+  },
+  createPage: async () => {
+    throw new Error('Unexpected createPage call');
+  },
+  appendMarkdown: async () => {
+    throw new Error('Unexpected appendMarkdown call');
+  },
+  queryDatabase: async () => {
+    throw new Error('Unexpected queryDatabase call');
+  },
+};
 
 const authedTransport = (url: URL) =>
   asTransport(
@@ -24,7 +48,7 @@ let mcpUrl: URL;
 
 beforeAll(async () => {
   const port = await new Promise<number>((resolve) => {
-    server = serve({ fetch: createApp({ mcpApiKey: KEY }).fetch, port: 0 }, (info) =>
+    server = serve({ fetch: createApp({ mcpApiKey: KEY, gateway }).fetch, port: 0 }, (info) =>
       resolve(info.port),
     );
   });
@@ -36,15 +60,36 @@ afterAll(() => {
 });
 
 describe('Streamable HTTP endpoint', () => {
-  it('accepts a real MCP client: initialize, list tools, call ping', async () => {
+  it('accepts a real MCP client: initialize, list tools, call a Notion tool', async () => {
     const client = new Client({ name: 'integration-client', version: '0.0.0' });
     await client.connect(authedTransport(mcpUrl));
 
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name)).toContain('ping');
+    expect(tools.map((t) => t.name)).toEqual([
+      'search_pages',
+      'get_page',
+      'create_page',
+      'append_blocks',
+      'query_database',
+    ]);
 
-    const result = await client.callTool({ name: 'ping', arguments: { message: 'round-trip' } });
-    expect(result.content).toEqual([{ type: 'text', text: 'pong: round-trip' }]);
+    const result = await client.callTool({
+      name: 'search_pages',
+      arguments: { query: 'round-trip' },
+    });
+    expect(result.content).toEqual([
+      {
+        type: 'text',
+        text: JSON.stringify([
+          {
+            id: 'page-round-trip',
+            title: 'round-trip',
+            url: null,
+            lastEditedTime: '2026-07-10T12:00:00.000Z',
+          },
+        ]),
+      },
+    ]);
 
     await client.close();
   });
@@ -58,12 +103,12 @@ describe('Streamable HTTP endpoint', () => {
     const [a, b] = await Promise.all([connect('client-a'), connect('client-b')]);
 
     const [ra, rb] = await Promise.all([
-      a.callTool({ name: 'ping', arguments: { message: 'a' } }),
-      b.callTool({ name: 'ping', arguments: { message: 'b' } }),
+      a.callTool({ name: 'search_pages', arguments: { query: 'a' } }),
+      b.callTool({ name: 'search_pages', arguments: { query: 'b' } }),
     ]);
 
-    expect(ra.content).toEqual([{ type: 'text', text: 'pong: a' }]);
-    expect(rb.content).toEqual([{ type: 'text', text: 'pong: b' }]);
+    expect(JSON.stringify(ra.content)).toContain('page-a');
+    expect(JSON.stringify(rb.content)).toContain('page-b');
 
     await Promise.all([a.close(), b.close()]);
   });

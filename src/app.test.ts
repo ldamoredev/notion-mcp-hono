@@ -1,8 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { createApp } from './app.js';
+import type { NotionGateway } from './notion/gateway.js';
 
 const KEY = 'test-api-key';
-const app = () => createApp({ mcpApiKey: KEY });
+const unusedGateway: NotionGateway = {
+  searchPages: async () => [],
+  getPageMarkdown: async () => {
+    throw new Error('Unexpected getPageMarkdown call');
+  },
+  createPage: async () => {
+    throw new Error('Unexpected createPage call');
+  },
+  appendMarkdown: async () => {
+    throw new Error('Unexpected appendMarkdown call');
+  },
+  queryDatabase: async () => {
+    throw new Error('Unexpected queryDatabase call');
+  },
+};
+const app = () => createApp({ mcpApiKey: KEY, gateway: unusedGateway });
 
 const initializeBody = JSON.stringify({
   jsonrpc: '2.0',

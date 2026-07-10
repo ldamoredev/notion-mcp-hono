@@ -1,0 +1,26 @@
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+import type { NotionGateway } from '../../notion/gateway.js';
+import { textResult, withNotionError } from '../toolResult.js';
+
+export function registerGetPageTool(server: McpServer, gateway: NotionGateway): void {
+  server.registerTool(
+    'get_page',
+    {
+      description:
+        'Retrieves one Notion page and returns a JSON object containing its ID, title, URL, ' +
+        'clean markdown content, and whether that content was truncated. Pass a page ID found ' +
+        'with search_pages or query_database; use query_database to retrieve multiple database rows.',
+      inputSchema: {
+        page_id: z
+          .string()
+          .min(1)
+          .max(100)
+          .describe('The Notion page ID to retrieve, with or without UUID hyphens.'),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ page_id }) =>
+      withNotionError(async () => textResult(await gateway.getPageMarkdown(page_id))),
+  );
+}
