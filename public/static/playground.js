@@ -299,10 +299,166 @@
     if (page.truncated) {
       box.append(el('p', 'pg-empty', 'Content truncated by Notion — the page is very large.'));
     }
-    const markdown = el('pre', 'pg-markdown');
-    markdown.textContent = page.markdown || '(empty page)';
-    box.append(markdown);
+    box.append(page.markdown ? markdownView(page.markdown) : el('p', 'pg-empty', '(empty page)'));
     return box;
+  }
+
+  /* ---------- minimal markdown renderer ----------
+     Everything is built with createElement/textContent — page content from
+     Notion never touches innerHTML, so it cannot inject markup. Links are
+     restricted to http(s) URLs by the inline pattern. */
+
+  function markdownView(md) {
+    const root = el('div', 'pg-md');
+    const lines = md.split('\n');
+    let list = null;
+    const closeList = () => {
+      list = null;
+    };
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      if (/^```/.test(trimmed)) {
+        const buf = [];
+        i += 1;
+        while (i < lines.length && !/^```/.test(lines[i].trim())) {
+          buf.push(lines[i]);
+          i += 1;
+        }
+        i += 1;
+        closeList();
+        const pre = el('pre', 'pg-md-code');
+        pre.textContent = buf.join('\n');
+        root.append(pre);
+        continue;
+      }
+
+      // Notion markdown artifacts: skip structural tags, keep their content.
+      if (trimmed === '<empty-block/>' || trimmed === '<details>' || trimmed === '</details>') {
+        i += 1;
+        continue;
+      }
+      const summary = trimmed.match(/^<summary>(.*)<\/summary>$/);
+      if (summary) {
+        closeList();
+        root.append(el('p', 'pg-md-summary', `▸ ${summary[1]}`));
+        i += 1;
+        continue;
+      }
+      const pageTag = trimmed.match(/^<page url="(https?:\/\/[^"]+)">(.*)<\/page>$/);
+      if (pageTag) {
+        closeList();
+        const p = el('p', 'pg-md-pagelink');
+        const a = el('a', null, `↳ ${pageTag[2]}`);
+        a.href = pageTag[1];
+        a.rel = 'noopener';
+        a.target = '_blank';
+        p.append(a);
+        root.append(p);
+        i += 1;
+        continue;
+      }
+
+      const heading = trimmed.match(/^(#{1,6})\s+(.*)$/);
+      if (heading) {
+        closeList();
+        const h = el('p', `pg-md-h pg-md-h${Math.min(heading[1].length, 3)}`);
+        h.append(...inlineNodes(heading[2]));
+        root.append(h);
+        i += 1;
+        continue;
+      }
+
+      if (/^(---+|\*\*\*+)$/.test(trimmed)) {
+        closeList();
+        root.append(el('hr', 'pg-md-hr'));
+        i += 1;
+        continue;
+      }
+
+      const quote = trimmed.match(/^>\s?(.*)$/);
+      if (quote) {
+        closeList();
+        const q = el('blockquote', 'pg-md-quote');
+        q.append(...inlineNodes(quote[1]));
+        root.append(q);
+        i += 1;
+        continue;
+      }
+
+      const task = line.match(/^\s*[-*]\s+\[([ xX])\]\s+(.*)$/);
+      const bullet = task ? null : line.match(/^\s*[-*]\s+(.*)$/);
+      const ordered = task || bullet ? null : line.match(/^\s*\d+[.)]\s+(.*)$/);
+      if (task || bullet || ordered) {
+        const type = ordered ? 'ol' : 'ul';
+        if (!list || list.type !== type) {
+          list = { type, box: el(type, 'pg-md-list') };
+          root.append(list.box);
+        }
+        const li = el('li');
+        if (task) {
+          li.className = 'pg-md-task';
+          li.append(el('span', task[1].trim() ? 'pg-md-check is-done' : 'pg-md-check', task[1].trim() ? '☑' : '☐'));
+          li.append(...inlineNodes(task[2]));
+        } else {
+          li.append(...inlineNodes((bullet || ordered)[1]));
+        }
+        list.box.append(li);
+        i += 1;
+        continue;
+      }
+
+      if (trimmed === '') {
+        closeList();
+        i += 1;
+        continue;
+      }
+
+      closeList();
+      const p = el('p', 'pg-md-p');
+      p.append(...inlineNodes(trimmed));
+      root.append(p);
+      i += 1;
+    }
+    return root;
+  }
+
+  const INLINE_TOKEN = /(`[^`]+`)|(\*\*[^*]+\*\*)|(\*[^*\s][^*]*\*)|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/;
+
+  function inlineNodes(text) {
+    const nodes = [];
+    let rest = text;
+    while (rest.length > 0) {
+      const match = rest.match(INLINE_TOKEN);
+      if (!match) {
+        nodes.push(document.createTextNode(rest));
+        break;
+      }
+      if (match.index > 0) nodes.push(document.createTextNode(rest.slice(0, match.index)));
+      const token = match[0];
+      if (token.startsWith('`')) {
+        nodes.push(el('code', 'pg-md-inline-code', token.slice(1, -1)));
+      } else if (token.startsWith('**')) {
+        const strong = el('strong');
+        strong.append(...inlineNodes(token.slice(2, -2)));
+        nodes.push(strong);
+      } else if (token.startsWith('[')) {
+        const a = el('a', null, match[4]);
+        a.href = match[5];
+        a.rel = 'noopener';
+        a.target = '_blank';
+        nodes.push(a);
+      } else {
+        const em = el('em');
+        em.append(...inlineNodes(token.slice(1, -1)));
+        nodes.push(em);
+      }
+      rest = rest.slice(match.index + token.length);
+    }
+    return nodes;
   }
 
   function databaseView(data) {

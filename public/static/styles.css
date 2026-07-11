@@ -733,11 +733,104 @@ a.pg-result-title {
   margin-bottom: 0.6rem;
 }
 
-.pg-markdown {
-  max-height: 340px;
+/* rendered markdown from get_page */
+
+.pg-md {
+  max-height: 420px;
   overflow: auto;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  font-size: 0.9375rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  padding: 1.1rem 1.2rem;
+}
+
+.pg-md-h {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.pg-md-h1 {
+  font-size: 1.25rem;
+  margin-top: 0.3rem;
+}
+
+.pg-md-h2 {
+  font-size: 1.0625rem;
+  margin-top: 0.3rem;
+}
+
+.pg-md-h3 {
+  font-size: 0.9375rem;
+}
+
+.pg-md-p,
+.pg-md-list li {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.pg-md-p strong,
+.pg-md-list strong {
+  color: var(--ink);
+}
+
+.pg-md-list {
+  padding-left: 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pg-md-task {
+  list-style: none;
+  margin-left: -1.3rem;
+}
+
+.pg-md-check {
+  margin-right: 0.5rem;
+  color: var(--muted);
+}
+
+.pg-md-check.is-done {
+  color: var(--green);
+}
+
+.pg-md-quote {
+  border-left: 2px solid var(--accent);
+  padding-left: 0.9rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.pg-md-code {
+  font-size: 0.75rem;
+}
+
+.pg-md-inline-code {
+  background: var(--bg-deep);
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+  color: var(--ink);
+}
+
+.pg-md-summary {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.pg-md-pagelink a {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.pg-md-hr {
+  border: none;
+  border-top: 1px dashed var(--line-soft);
 }
 
 .pg-table-wrap {
