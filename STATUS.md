@@ -10,4 +10,14 @@ Phased build — one review + commit per phase. See AGENTS.md for full context.
 | 4 | Notion layer: client wrapper + markdown conversion, tested | ✅ done | `NotionGateway` interface + SDK v5 adapter; markdown via Notion's native `retrieveMarkdown`/`updateMarkdown`; property simplification; typed `NotionError` |
 | 5 | The 5 tools, TDD, one at a time | ✅ done | Exactly five tools; gateway injected through app/server; Zod-described inputs; actionable Notion errors returned in-band; fake-gateway MCP + HTTP integration coverage |
 | 6 | Hardening: error taxonomy, input limits, logging, README | ✅ done | Tool runner (no internals leak to clients); JSON logs to stdout; 2 MiB body limit → 413; README; `npm run smoke` script verified against a local server |
-| 7 | Deploy: Railway, verify /health, claude.ai connector, prod smoke test | 🔄 next | Needs: Railway service + env vars, health check path `/health`, public domain, claude.ai connector with Authorization header, `npm run smoke` against prod |
+| 7 | Deploy: Railway, verify /health, claude.ai connector, prod smoke test | ✅ done | Live at https://notion-mcp-hono-production.up.railway.app — prod smoke test passed: health, 401, handshake, tools/list, search_pages, get_page, create_page, append_blocks. query_database verified in tests only (no database shared yet). Claude Code connected as `notion-hono` |
+
+## Landing page + live playground (second build)
+
+| # | Phase | Status | Notes |
+|---|-------|--------|-------|
+| 8 | Static landing at `GET /`: hero, architecture diagram, tool cards, connect section | ✅ done | `public/` served via `@hono/node-server` serveStatic (cwd-relative, ships uncompiled); routes added after logging middleware, `/mcp` chain untouched (regression-tested); brand: #0E1A2E / #4E9BE8 / dashed=external motif; verified desktop + 390px mobile in Chrome |
+| 9 | Demo routes: `POST /demo/run/:tool`, read-only allowlist, in-memory rate limiter, `DEMO_NOTION_TOKEN` wiring, tests | ⬜ next | Write tools must be unreachable through `/demo/*` under any input |
+| 10 | Playground UI wired to the demo routes | ⬜ todo | Schema-driven forms; JSON + human rendering; show equivalent MCP JSON-RPC payload |
+| 11 | Polish: mobile states, loading/error/empty, favicon, meta/OG | ⬜ todo | |
+| 12 | Deploy + verify: MCP auth intact, `/` renders, playground hits demo workspace | ⬜ todo | Set `DEMO_NOTION_TOKEN` in Railway |

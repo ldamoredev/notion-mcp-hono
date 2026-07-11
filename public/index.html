@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>notion-mcp-hono — a remote MCP server for Notion, built properly</title>
+  <meta name="description" content="A remote MCP server for Notion: Streamable HTTP, bearer auth, TDD. TypeScript + Hono, deployed on Railway. Five tools, clean architecture, live demo." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container header-row">
+    <a class="wordmark" href="/">notion-mcp-hono</a>
+    <nav class="header-nav">
+      <span class="status-pill"><span class="dot dot-green"></span>live</span>
+      <a href="https://github.com/ldamoredev/notion-mcp-hono" rel="noopener">GitHub&nbsp;↗</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ Hero ============ -->
+  <section class="hero">
+    <div class="container">
+      <p class="eyebrow">remote MCP server · TypeScript + Hono · Streamable HTTP</p>
+      <h1>Notion as MCP tools,<br />running in production.</h1>
+      <p class="lead">
+        A remote MCP server for Notion, built properly: Streamable&nbsp;HTTP,
+        bearer auth, tested.
+      </p>
+      <div class="endpoint-pill">
+        <span class="dot dot-green"></span>
+        <code>https://notion-mcp-hono-production.up.railway.app/mcp</code>
+      </div>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#connect">Connect it yourself</a>
+        <a class="btn btn-ghost" href="https://github.com/ldamoredev/notion-mcp-hono" rel="noopener">View the source</a>
+      </div>
+      <p class="tagline">
+        “I take AI systems from demo to production.”
+        <a class="handle" href="https://github.com/ldamoredev" rel="noopener">@ldamoredev</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ Architecture ============ -->
+  <section id="architecture" class="section">
+    <div class="container">
+      <h2>Architecture</h2>
+      <p class="section-sub">
+        Three layers, dependencies pointing inward. The MCP layer never imports the
+        Notion SDK — the integration is swappable without touching tool code.
+      </p>
+
+      <figure class="diagram" role="img" aria-label="Request flow: an MCP client calls POST /mcp over Streamable HTTP with a bearer token; inside the server, the Hono transport layer passes to the MCP layer, which calls the Notion layer, which talks to the Notion API.">
+        <div class="diag-node diag-external">
+          <span class="diag-title">MCP client</span>
+          <span class="diag-desc">claude.ai · Claude Code · any Streamable HTTP client</span>
+        </div>
+
+        <div class="diag-link diag-link-dashed">
+          <code>POST /mcp · Authorization: Bearer &lt;key&gt;</code>
+        </div>
+
+        <div class="diag-server">
+          <span class="diag-server-label">notion-mcp-hono</span>
+
+          <div class="diag-node diag-layer">
+            <span class="diag-title">Transport <code class="diag-path">src/app.ts</code></span>
+            <span class="diag-desc">Hono routes · timing-safe bearer auth · body limit · JSON request logs</span>
+          </div>
+          <div class="diag-link"></div>
+          <div class="diag-node diag-layer">
+            <span class="diag-title">MCP <code class="diag-path">src/mcp/</code></span>
+            <span class="diag-desc">McpServer · 5 tool registrations · Zod input schemas · tool runner — raw errors never reach the client</span>
+          </div>
+          <div class="diag-link"></div>
+          <div class="diag-node diag-layer">
+            <span class="diag-title">Notion <code class="diag-path">src/notion/</code></span>
+            <span class="diag-desc">NotionGateway interface (domain types only) · @notionhq/client v5 adapter · markdown converted natively by Notion</span>
+          </div>
+        </div>
+
+        <div class="diag-link diag-link-dashed">
+          <code>Notion API · 2025-09-03</code>
+        </div>
+
+        <div class="diag-node diag-external">
+          <span class="diag-title">Notion workspace</span>
+          <span class="diag-desc">pages · databases · markdown in, markdown out</span>
+        </div>
+
+        <figcaption class="diagram-legend">
+          <span><span class="legend-swatch legend-solid"></span>solid — shipped code</span>
+          <span><span class="legend-swatch legend-dashed"></span>dashed — external systems</span>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ Tools ============ -->
+  <section id="tools" class="section">
+    <div class="container">
+      <h2>Five tools, exactly</h2>
+      <p class="section-sub">
+        Scope stays small and excellent. Every input is Zod-validated with size limits;
+        every description is written for the LLM consuming it; Notion failures come back
+        as actionable messages, never raw API errors.
+      </p>
+
+      <div class="tool-grid">
+        <article class="tool-card">
+          <header>
+            <h3><code>search_pages</code></h3>
+            <span class="badge badge-read">read-only</span>
+          </header>
+          <p>Searches pages across the workspace by title. The discovery step before
+             <code>get_page</code> or <code>append_blocks</code>.</p>
+          <ul class="schema">
+            <li><code>query</code><span>string</span></li>
+            <li><code>limit?</code><span>int · 1–100</span></li>
+          </ul>
+        </article>
+
+        <article class="tool-card">
+          <header>
+            <h3><code>get_page</code></h3>
+            <span class="badge badge-read">read-only</span>
+          </header>
+          <p>Retrieves one page as clean markdown, with its ID, title, URL, and a
+             truncation flag.</p>
+          <ul class="schema">
+            <li><code>page_id</code><span>string</span></li>
+          </ul>
+        </article>
+
+        <article class="tool-card">
+          <header>
+            <h3><code>query_database</code></h3>
+            <span class="badge badge-read">read-only</span>
+          </header>
+          <p>Queries a database with Notion filters and sorts; rows come back simplified
+             to flat JSON, with cursor-based pagination.</p>
+          <ul class="schema">
+            <li><code>database_id</code><span>string</span></li>
+            <li><code>filter?</code><span>Notion filter object</span></li>
+            <li><code>sorts?</code><span>Notion sorts array</span></li>
+            <li><code>page_size?</code><span>int · 1–100</span></li>
+            <li><code>start_cursor?</code><span>string</span></li>
+          </ul>
+        </article>
+
+        <article class="tool-card">
+          <header>
+            <h3><code>create_page</code></h3>
+            <span class="badge badge-write">write</span>
+          </header>
+          <p>Creates a page under an existing parent — a child page, or a new row in a
+             database — optionally with initial markdown content.</p>
+          <ul class="schema">
+            <li><code>parent_type</code><span>"page" | "database"</span></li>
+            <li><code>parent_id</code><span>string</span></li>
+            <li><code>title</code><span>string</span></li>
+            <li><code>markdown?</code><span>string</span></li>
+          </ul>
+        </article>
+
+        <article class="tool-card">
+          <header>
+            <h3><code>append_blocks</code></h3>
+            <span class="badge badge-write">write</span>
+          </header>
+          <p>Appends Notion-compatible markdown to the end of an existing page.</p>
+          <ul class="schema">
+            <li><code>page_id</code><span>string</span></li>
+            <li><code>markdown</code><span>string</span></li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Connect ============ -->
+  <section id="connect" class="section">
+    <div class="container">
+      <h2>Connect it yourself</h2>
+      <p class="section-sub">
+        Every request to <code>/mcp</code> requires
+        <code>Authorization: Bearer &lt;MCP_API_KEY&gt;</code> — compared timing-safe
+        server-side. Deploy your own from the
+        <a href="https://github.com/ldamoredev/notion-mcp-hono" rel="noopener">repo</a>
+        in minutes and use your own key.
+      </p>
+
+      <div class="connect-grid">
+        <article class="connect-card">
+          <h3>claude.ai — custom connector</h3>
+          <ol>
+            <li>Settings → Connectors → <strong>Add custom connector</strong></li>
+            <li>URL:
+              <pre><code>https://notion-mcp-hono-production.up.railway.app/mcp</code></pre>
+            </li>
+            <li>Advanced settings → HTTP headers:
+              <pre><code>Authorization: Bearer &lt;MCP_API_KEY&gt;</code></pre>
+            </li>
+          </ol>
+        </article>
+
+        <article class="connect-card">
+          <h3>Claude Code</h3>
+          <pre><code>claude mcp add --transport http notion-hono \
+  https://notion-mcp-hono-production.up.railway.app/mcp \
+  --header "Authorization: Bearer &lt;MCP_API_KEY&gt;"</code></pre>
+          <p class="connect-note">
+            The five tools appear as <code>mcp__notion-hono__*</code>. A missing or wrong
+            key gets a <code>401</code> with a JSON body naming the expected header.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-row">
+    <p>
+      <a href="https://github.com/ldamoredev/notion-mcp-hono" rel="noopener">github.com/ldamoredev/notion-mcp-hono</a>
+      · MIT
+    </p>
+    <p class="footer-meta">TypeScript · Hono · MCP SDK · Railway — built test-first by
+      <a href="https://github.com/ldamoredev" rel="noopener">@ldamoredev</a>
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>

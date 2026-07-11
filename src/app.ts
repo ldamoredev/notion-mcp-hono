@@ -1,4 +1,5 @@
 import { StreamableHTTPTransport } from '@hono/mcp';
+import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { bearerAuth } from './auth.js';
@@ -66,6 +67,11 @@ export function createApp({ mcpApiKey, gateway, logger = silentLogger }: AppConf
       405,
     );
   });
+
+  // Public landing page + assets. Paths resolve against the process cwd (the
+  // repo root both locally and on Railway), so public/ ships as-is, uncompiled.
+  app.get('/', serveStatic({ path: './public/index.html' }));
+  app.get('/static/*', serveStatic({ root: './public' }));
 
   app.notFound((c) => c.json({ error: 'not_found', message: 'Route not found' }, 404));
 
