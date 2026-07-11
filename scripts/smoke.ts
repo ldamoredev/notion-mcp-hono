@@ -64,6 +64,49 @@ async function main(): Promise<void> {
     return '';
   });
 
+  await step('GET / serves the landing page', async () => {
+    const res = await fetch(base);
+    if (res.status !== 200) throw new Error(`expected 200, got ${res.status}`);
+    const html = await res.text();
+    if (!html.includes('notion-mcp-hono')) throw new Error('landing HTML marker missing');
+    return `${Math.round(html.length / 1024)} KiB of HTML`;
+  });
+
+  await step('GET /demo/tools lists exactly the read-only tools', async () => {
+    const res = await fetch(new URL('/demo/tools', base));
+    if (res.status !== 200) throw new Error(`expected 200, got ${res.status}`);
+    const body = (await res.json()) as { tools: { name: string }[] };
+    const names = body.tools.map((t) => t.name).sort();
+    if (JSON.stringify(names) !== JSON.stringify(['get_page', 'query_database', 'search_pages'])) {
+      throw new Error(`got: ${names.join(', ')}`);
+    }
+    return '';
+  });
+
+  await step('POST /demo/run/search_pages runs against the demo workspace', async () => {
+    const res = await fetch(new URL('/demo/run/search_pages', base), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query: 'welcome' }),
+    });
+    if (res.status === 503) return 'demo disabled on this deployment (DEMO_NOTION_TOKEN unset)';
+    if (res.status !== 200) throw new Error(`expected 200, got ${res.status}: ${await res.text()}`);
+    const body = (await res.json()) as { ok: boolean; result: { title: string }[] };
+    return `${body.result.length} page(s)${body.result[0] ? `, first: "${body.result[0].title}"` : ''}`;
+  });
+
+  await step('write tools are unreachable through /demo/*', async () => {
+    for (const tool of ['create_page', 'append_blocks']) {
+      const res = await fetch(new URL(`/demo/run/${tool}`, base), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ parent_type: 'page', parent_id: 'x', title: 'x', page_id: 'x', markdown: 'x' }),
+      });
+      if (res.status !== 404) throw new Error(`${tool}: expected 404, got ${res.status}`);
+    }
+    return '';
+  });
+
   const client = new Client({ name: 'smoke-test', version: '0.0.0' });
   const transport = new StreamableHTTPClientTransport(new URL('/mcp', base), {
     requestInit: { headers: { authorization: `Bearer ${MCP_API_KEY}` } },
