@@ -558,4 +558,22 @@
     ping();
     setInterval(ping, 30_000);
   }
+
+  /* ---------- theme toggle (initial theme is set pre-paint in <head>) ---------- */
+
+  const toggle = document.querySelector('[data-theme-toggle]');
+  if (toggle) {
+    const themeColor = { dark: '#080a14', light: '#f4f5fb' };
+    const syncMeta = () => {
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.content = themeColor[document.documentElement.dataset.theme] || themeColor.dark;
+    };
+    syncMeta();
+    toggle.addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem('theme', next);
+      syncMeta();
+    });
+  }
 })();

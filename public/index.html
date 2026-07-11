@@ -20,6 +20,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/styles.css" />
+  <script>
+    // Runs before first paint so the stored theme never flashes.
+    (() => {
+      const saved = localStorage.getItem('theme');
+      const theme = saved || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.dataset.theme = theme;
+    })();
+  </script>
   <script src="/static/playground.js" defer></script>
 </head>
 <body>
@@ -32,6 +40,7 @@
       <span class="legend-item"><span class="swatch swatch-dashed"></span>demo · external</span>
     </span>
     <span class="status-pill"><span class="dot" data-heartbeat></span><span class="status-word">live</span></span>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Toggle color theme">◐</button>
     <a class="mast-gh" href="https://github.com/ldamoredev/notion-mcp-hono" rel="noopener">GitHub&nbsp;↗</a>
   </div>
 </header>

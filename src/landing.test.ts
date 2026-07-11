@@ -72,6 +72,13 @@ describe('GET /static/* (assets)', () => {
 });
 
 describe('polish: metadata and caching', () => {
+  it('ships the theme toggle and the pre-paint theme script', async () => {
+    const html = await (await app().request('/')).text();
+
+    expect(html).toContain('data-theme-toggle');
+    expect(html).toContain("localStorage.getItem('theme')");
+  });
+
   it('ships favicon and Open Graph tags', async () => {
     const html = await (await app().request('/')).text();
 
