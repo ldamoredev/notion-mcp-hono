@@ -16,10 +16,24 @@ if (!notionToken) {
   process.exit(1);
 }
 
+// Optional: powers the public playground (/demo/*) against a dedicated demo
+// workspace. When unset the demo routes respond 503 and everything else works.
+const demoNotionToken = process.env.DEMO_NOTION_TOKEN;
+
 const port = Number(process.env.PORT ?? 3000);
 const gateway = createNotionGateway(new Client({ auth: notionToken }));
+const demoGateway = demoNotionToken
+  ? createNotionGateway(new Client({ auth: demoNotionToken }))
+  : undefined;
 const logger = createLogger();
 
-serve({ fetch: createApp({ mcpApiKey, gateway, logger }).fetch, port }, (info) => {
-  logger.info('server_started', { port: info.port });
+const app = createApp({
+  mcpApiKey,
+  gateway,
+  ...(demoGateway !== undefined && { demoGateway }),
+  logger,
+});
+
+serve({ fetch: app.fetch, port }, (info) => {
+  logger.info('server_started', { port: info.port, demoEnabled: demoGateway !== undefined });
 });

@@ -3,6 +3,8 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { bearerAuth } from './auth.js';
+import { createDemoRoutes } from './demo/routes.js';
+import type { RateLimitOptions } from './demo/rateLimit.js';
 import type { Logger } from './logger.js';
 import { silentLogger } from './logger.js';
 import { createMcpServer } from './mcp/server.js';
@@ -11,12 +13,15 @@ import type { NotionGateway } from './notion/gateway.js';
 export interface AppConfig {
   mcpApiKey: string;
   gateway: NotionGateway;
+  /** Gateway for the dedicated demo workspace. Unset → /demo/* responds 503. */
+  demoGateway?: NotionGateway;
+  demoRateLimit?: RateLimitOptions;
   logger?: Logger;
 }
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024; // 2 MiB: fits the 500k-char markdown limit with JSON overhead
 
-export function createApp({ mcpApiKey, gateway, logger = silentLogger }: AppConfig): Hono {
+export function createApp({ mcpApiKey, gateway, demoGateway, demoRateLimit, logger = silentLogger }: AppConfig): Hono {
   const app = new Hono();
 
   app.get('/health', (c) => c.json({ status: 'ok' }));
@@ -67,6 +72,17 @@ export function createApp({ mcpApiKey, gateway, logger = silentLogger }: AppConf
       405,
     );
   });
+
+  // Public playground backend: read-only tools against the demo workspace,
+  // rate-limited per IP. Never sees the real-workspace gateway.
+  app.route(
+    '/demo',
+    createDemoRoutes({
+      ...(demoGateway !== undefined && { gateway: demoGateway }),
+      ...(demoRateLimit !== undefined && { rateLimit: demoRateLimit }),
+      logger,
+    }),
+  );
 
   // Public landing page + assets. Paths resolve against the process cwd (the
   // repo root both locally and on Railway), so public/ ships as-is, uncompiled.

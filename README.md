@@ -118,6 +118,10 @@ Then `/mcp` inside Claude Code shows the connection; the five tools appear as
 2. Set the environment variables on the service:
    - `NOTION_TOKEN` — your Notion internal integration token
    - `MCP_API_KEY` — the bearer key for clients (generate: `openssl rand -hex 32`)
+   - `DEMO_NOTION_TOKEN` (optional) — a second integration token for a **dedicated demo
+     workspace**, powering the public playground at `/demo/*`. Leave it unset to disable
+     the playground (its routes then respond `503`); never point it at a workspace with
+     real data.
 
    `PORT` is injected by Railway automatically; the server reads it.
 3. Set the service **health check path** to `/health`.

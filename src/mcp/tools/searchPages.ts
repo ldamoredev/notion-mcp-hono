@@ -3,6 +3,22 @@ import { z } from 'zod';
 import type { NotionGateway } from '../../notion/gateway.js';
 import { textResult, type ToolRunner } from '../toolResult.js';
 
+/** Shared with the demo routes (/demo/run/search_pages) so both surfaces validate identically. */
+export const searchPagesInput = {
+  query: z
+    .string()
+    .min(1)
+    .max(2_000)
+    .describe('Text to match against page titles in the connected Notion workspace.'),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe('Maximum number of pages to return. Defaults to 10; allowed range is 1–100.'),
+};
+
 export function registerSearchPagesTool(server: McpServer, gateway: NotionGateway, run: ToolRunner): void {
   server.registerTool(
     'search_pages',
@@ -11,20 +27,7 @@ export function registerSearchPagesTool(server: McpServer, gateway: NotionGatewa
         'Searches pages the Notion integration can access and returns a JSON array of page IDs, ' +
         'titles, URLs, and last-edited timestamps. Use this to discover a page ID before get_page ' +
         'or append_blocks; use query_database instead when you need database filters or sorts.',
-      inputSchema: {
-        query: z
-          .string()
-          .min(1)
-          .max(2_000)
-          .describe('Text to match against page titles in the connected Notion workspace.'),
-        limit: z
-          .number()
-          .int()
-          .min(1)
-          .max(100)
-          .optional()
-          .describe('Maximum number of pages to return. Defaults to 10; allowed range is 1–100.'),
-      },
+      inputSchema: searchPagesInput,
       annotations: { readOnlyHint: true },
     },
     async ({ query, limit }) =>

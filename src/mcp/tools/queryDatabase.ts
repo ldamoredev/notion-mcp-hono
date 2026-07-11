@@ -5,6 +5,36 @@ import { textResult, type ToolRunner } from '../toolResult.js';
 
 const jsonObject = z.record(z.string(), z.unknown());
 
+/** Shared with the demo routes (/demo/run/query_database) so both surfaces validate identically. */
+export const queryDatabaseInput = {
+  database_id: z
+    .string()
+    .min(1)
+    .max(100)
+    .describe('The Notion database ID to query, with or without UUID hyphens.'),
+  filter: jsonObject
+    .optional()
+    .describe('Optional Notion API filter object, including compound and/or filters.'),
+  sorts: z
+    .array(jsonObject)
+    .max(100)
+    .optional()
+    .describe('Optional Notion API sorts array, in priority order.'),
+  page_size: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe('Maximum rows to return. Notion defaults to 100; allowed range is 1–100.'),
+  start_cursor: z
+    .string()
+    .min(1)
+    .max(1_000)
+    .optional()
+    .describe('nextCursor from a previous query_database result, for the next page.'),
+};
+
 export function registerQueryDatabaseTool(server: McpServer, gateway: NotionGateway, run: ToolRunner): void {
   server.registerTool(
     'query_database',
@@ -13,34 +43,7 @@ export function registerQueryDatabaseTool(server: McpServer, gateway: NotionGate
         'Queries a Notion database and returns JSON containing simplified rows, hasMore, and ' +
         'nextCursor. Pass a database ID (not a data source ID), plus optional Notion API filter ' +
         'and sorts JSON; use search_pages for title search across the workspace instead.',
-      inputSchema: {
-        database_id: z
-          .string()
-          .min(1)
-          .max(100)
-          .describe('The Notion database ID to query, with or without UUID hyphens.'),
-        filter: jsonObject
-          .optional()
-          .describe('Optional Notion API filter object, including compound and/or filters.'),
-        sorts: z
-          .array(jsonObject)
-          .max(100)
-          .optional()
-          .describe('Optional Notion API sorts array, in priority order.'),
-        page_size: z
-          .number()
-          .int()
-          .min(1)
-          .max(100)
-          .optional()
-          .describe('Maximum rows to return. Notion defaults to 100; allowed range is 1–100.'),
-        start_cursor: z
-          .string()
-          .min(1)
-          .max(1_000)
-          .optional()
-          .describe('nextCursor from a previous query_database result, for the next page.'),
-      },
+      inputSchema: queryDatabaseInput,
       annotations: { readOnlyHint: true },
     },
     async ({ database_id, filter, sorts, page_size, start_cursor }) =>

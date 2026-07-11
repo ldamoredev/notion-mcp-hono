@@ -17,7 +17,7 @@ Phased build — one review + commit per phase. See AGENTS.md for full context.
 | # | Phase | Status | Notes |
 |---|-------|--------|-------|
 | 8 | Static landing at `GET /`: hero, architecture diagram, tool cards, connect section | ✅ done | `public/` served via `@hono/node-server` serveStatic (cwd-relative, ships uncompiled); routes added after logging middleware, `/mcp` chain untouched (regression-tested); brand: #0E1A2E / #4E9BE8 / dashed=external motif; verified desktop + 390px mobile in Chrome |
-| 9 | Demo routes: `POST /demo/run/:tool`, read-only allowlist, in-memory rate limiter, `DEMO_NOTION_TOKEN` wiring, tests | ⬜ next | Write tools must be unreachable through `/demo/*` under any input |
-| 10 | Playground UI wired to the demo routes | ⬜ todo | Schema-driven forms; JSON + human rendering; show equivalent MCP JSON-RPC payload |
+| 9 | Demo routes: `POST /demo/run/:tool`, read-only allowlist, in-memory rate limiter, `DEMO_NOTION_TOKEN` wiring, tests | ✅ done | Closed-map allowlist (write tools have no entry — structurally unreachable, fuzz-tested incl. `__proto__`); zod shapes shared with the MCP tools (exported from the 3 read tool modules); fixed-window limiter 10/min per x-forwarded-for IP, injectable clock; demo gateway is a second `NotionGateway` — tests prove the real gateway is never called; unset token → 503; errors: zod→400, NotionError→502 curated, else→500 generic + server log; 32 KiB body limit |
+| 10 | Playground UI wired to the demo routes | ⬜ next | Schema-driven forms; JSON + human rendering; show equivalent MCP JSON-RPC payload |
 | 11 | Polish: mobile states, loading/error/empty, favicon, meta/OG | ⬜ todo | |
 | 12 | Deploy + verify: MCP auth intact, `/` renders, playground hits demo workspace | ⬜ todo | Set `DEMO_NOTION_TOKEN` in Railway |
