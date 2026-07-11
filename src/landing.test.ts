@@ -40,6 +40,22 @@ describe('GET / (landing page)', () => {
   });
 });
 
+describe('playground section', () => {
+  it('ships the playground container and its script', async () => {
+    const html = await (await app().request('/')).text();
+
+    expect(html).toContain('id="playground"');
+    expect(html).toContain('/static/playground.js');
+  });
+
+  it('serves the playground script as JavaScript', async () => {
+    const res = await app().request('/static/playground.js');
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('javascript');
+  });
+});
+
 describe('GET /static/* (assets)', () => {
   it('serves the stylesheet with a CSS content type', async () => {
     const res = await app().request('/static/styles.css');

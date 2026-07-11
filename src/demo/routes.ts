@@ -20,37 +20,67 @@ export interface DemoRoutesConfig {
 }
 
 interface DemoTool {
+  /** Visitor-facing description (the MCP descriptions are written for LLMs). */
+  description: string;
+  /** JSON Schema derived from the same zod shape the MCP tool validates with. */
+  inputSchema: Record<string, unknown>;
   execute(gateway: NotionGateway, input: unknown): Promise<unknown>;
 }
 
 function demoTool<Shape extends z.ZodRawShape>(
   shape: Shape,
+  description: string,
   run: (gateway: NotionGateway, input: z.output<z.ZodObject<Shape>>) => Promise<unknown>,
 ): DemoTool {
   const schema = z.object(shape);
-  return { execute: (gateway, input) => run(gateway, schema.parse(input)) };
+  return {
+    description,
+    inputSchema: z.toJSONSchema(schema) as Record<string, unknown>,
+    execute: (gateway, input) => run(gateway, schema.parse(input)),
+  };
 }
 
 /**
  * The demo surface is this closed map, sharing the MCP tools' zod shapes.
  * The write tools (create_page, append_blocks) are not blocked — they have no
- * entry, so no input can reach them through /demo/*.
+ * entry, so no input can reach them through /demo/*. Insertion order is the
+ * playground's tab order.
  */
 const DEMO_TOOLS: Record<string, DemoTool> = {
-  search_pages: demoTool(searchPagesInput, (gateway, { query, limit }) =>
-    limit === undefined ? gateway.searchPages(query) : gateway.searchPages(query, limit),
+  search_pages: demoTool(
+    searchPagesInput,
+    'Search pages in the demo workspace by title.',
+    (gateway, { query, limit }) =>
+      limit === undefined ? gateway.searchPages(query) : gateway.searchPages(query, limit),
   ),
-  get_page: demoTool(getPageInput, (gateway, { page_id }) => gateway.getPageMarkdown(page_id)),
-  query_database: demoTool(queryDatabaseInput, (gateway, input) => {
-    const params: QueryDatabaseParams = {
-      databaseId: input.database_id,
-      ...(input.filter !== undefined && { filter: input.filter }),
-      ...(input.sorts !== undefined && { sorts: input.sorts }),
-      ...(input.page_size !== undefined && { pageSize: input.page_size }),
-      ...(input.start_cursor !== undefined && { startCursor: input.start_cursor }),
-    };
-    return gateway.queryDatabase(params);
-  }),
+  get_page: demoTool(
+    getPageInput,
+    'Fetch one page as clean markdown.',
+    (gateway, { page_id }) => gateway.getPageMarkdown(page_id),
+  ),
+  query_database: demoTool(
+    queryDatabaseInput,
+    'Query a database with optional Notion filters, sorts, and paging.',
+    (gateway, input) => {
+      const params: QueryDatabaseParams = {
+        databaseId: input.database_id,
+        ...(input.filter !== undefined && { filter: input.filter }),
+        ...(input.sorts !== undefined && { sorts: input.sorts }),
+        ...(input.page_size !== undefined && { pageSize: input.page_size }),
+        ...(input.start_cursor !== undefined && { startCursor: input.start_cursor }),
+      };
+      return gateway.queryDatabase(params);
+    },
+  ),
+};
+
+/** Static playground metadata: name, visitor description, JSON Schema per tool. */
+const TOOL_LISTING = {
+  tools: Object.entries(DEMO_TOOLS).map(([name, { description, inputSchema }]) => ({
+    name,
+    description,
+    inputSchema,
+  })),
 };
 
 const MAX_DEMO_BODY_BYTES = 32 * 1024; // tool arguments only — far below the MCP route's 2 MiB
@@ -79,6 +109,10 @@ export function createDemoRoutes(config: DemoRoutesConfig = {}): Hono {
         c.json({ error: 'payload_too_large', message: 'Demo request bodies are limited to 32 KiB.' }, 413),
     }),
   );
+
+  // Static metadata the playground builds its forms from — works with the
+  // demo disabled too, so the UI can render and explain the 503.
+  app.get('/tools', (c) => c.json(TOOL_LISTING));
 
   app.post('/run/:tool', async (c) => {
     if (!gateway) {

@@ -234,6 +234,34 @@ describe('demo disabled (no DEMO_NOTION_TOKEN)', () => {
   });
 });
 
+describe('GET /demo/tools — playground metadata', () => {
+  it('lists exactly the three read-only tools, in order, with JSON schemas', async () => {
+    const { app } = demoApp();
+
+    const res = await app.request('/demo/tools');
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      tools: { name: string; description: string; inputSchema: { properties: Record<string, unknown>; required?: string[] } }[];
+    };
+    expect(body.tools.map((t) => t.name)).toEqual(['search_pages', 'get_page', 'query_database']);
+    for (const tool of body.tools) {
+      expect(tool.description).toBeTruthy();
+      expect(tool.inputSchema.properties).toBeTypeOf('object');
+    }
+    const searchPages = body.tools[0];
+    expect(searchPages?.inputSchema.required).toEqual(['query']);
+  });
+
+  it('is available even when the demo gateway is not configured', async () => {
+    const app = createApp({ mcpApiKey: KEY, gateway: forbiddenGateway() });
+
+    const res = await app.request('/demo/tools');
+
+    expect(res.status).toBe(200);
+  });
+});
+
 describe('regression: the MCP surface is untouched by demo config', () => {
   it('/mcp still 401s without a bearer token when the demo is enabled', async () => {
     const { app } = demoApp();

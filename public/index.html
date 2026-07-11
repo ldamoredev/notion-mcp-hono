@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/styles.css" />
+  <script src="/static/playground.js" defer></script>
 </head>
 <body>
 
@@ -38,8 +39,8 @@
         <code>https://notion-mcp-hono-production.up.railway.app/mcp</code>
       </div>
       <div class="hero-actions">
-        <a class="btn btn-primary" href="#connect">Connect it yourself</a>
-        <a class="btn btn-ghost" href="https://github.com/ldamoredev/notion-mcp-hono" rel="noopener">View the source</a>
+        <a class="btn btn-primary" href="#playground">Try it live</a>
+        <a class="btn btn-ghost" href="#connect">Connect it yourself</a>
       </div>
       <p class="tagline">
         “I take AI systems from demo to production.”
@@ -181,6 +182,24 @@
             <li><code>markdown</code><span>string</span></li>
           </ul>
         </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Playground ============ -->
+  <section id="playground" class="section">
+    <div class="container">
+      <h2>Live playground</h2>
+      <p class="section-sub">
+        These requests run the same tool code the MCP endpoint runs — server-side, against a
+        <strong>dedicated demo workspace</strong>. Read-only tools only, rate-limited per
+        visitor. Next to each result you get the JSON-RPC payload an MCP client would send.
+      </p>
+
+      <div class="playground" data-playground>
+        <div class="pg-loading" data-pg-boot>
+          <span class="dot dot-green"></span> Loading tools…
+        </div>
       </div>
     </div>
   </section>
