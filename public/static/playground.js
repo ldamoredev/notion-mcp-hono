@@ -348,16 +348,23 @@
         i += 1;
         continue;
       }
-      const pageTag = trimmed.match(/^<page url="(https?:\/\/[^"]+)">(.*)<\/page>$/);
+      const pageTag = trimmed.match(/^<(page|database) url="(https?:\/\/[^"]+)"[^>]*>(.*)<\/\1>$/);
       if (pageTag) {
         closeList();
         const p = el('p', 'pg-md-pagelink');
-        const a = el('a', null, `↳ ${pageTag[2]}`);
-        a.href = pageTag[1];
+        const label = pageTag[3] || (pageTag[1] === 'database' ? 'Database' : 'Page');
+        const a = el('a', null, `↳ ${label}`);
+        a.href = pageTag[2];
         a.rel = 'noopener';
         a.target = '_blank';
         p.append(a);
         root.append(p);
+        i += 1;
+        continue;
+      }
+
+      // Any other purely structural tag line from Notion: skip, never print raw.
+      if (/^<\/?[a-z][^>]*>$/.test(trimmed)) {
         i += 1;
         continue;
       }

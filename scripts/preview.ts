@@ -36,6 +36,7 @@ const pages = [
       '',
       '---',
       '<page url="https://example.com/child">A child page</page>',
+      '<database url="https://example.com/db" inline="false" data-source-url="collection://x"></database>',
     ].join('\n'),
   },
   {
