@@ -8,6 +8,18 @@ over **Streamable HTTP**, deployed on Railway.
 > It is a portfolio piece demonstrating how to build a remote MCP server *properly*:
 > focused scope, test-driven, authenticated, observable, and deployed.
 
+## Live demo
+
+**[notion-mcp-hono-production.up.railway.app](https://notion-mcp-hono-production.up.railway.app/)** —
+the root URL of the MCP endpoint doubles as a landing page with a **live playground**:
+pick a read-only tool (`search_pages`, `get_page`, `query_database`), fill a form
+generated from the tool's actual zod schema, and run it against a dedicated demo
+workspace. Next to each result you see the JSON-RPC payload an MCP client would send.
+
+The playground's `/demo/*` routes hold credentials server-side, expose the read-only
+tools only (the write tools have no route entry — no input reaches them), and are
+rate-limited per IP (10 requests/minute).
+
 ## Tools
 
 | Tool | What it does |

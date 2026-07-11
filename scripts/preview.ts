@@ -75,6 +75,7 @@ const gateway: NotionGateway = {
 };
 
 const app = createApp({ mcpApiKey: 'preview-key', gateway, demoGateway });
+
 serve({ fetch: app.fetch, port: 3123 }, (info) => {
   console.log(`preview listening on http://localhost:${info.port}`);
 });

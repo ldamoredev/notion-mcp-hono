@@ -71,6 +71,32 @@ describe('GET /static/* (assets)', () => {
   });
 });
 
+describe('polish: metadata and caching', () => {
+  it('ships favicon and Open Graph tags', async () => {
+    const html = await (await app().request('/')).text();
+
+    expect(html).toContain('rel="icon"');
+    expect(html).toContain('property="og:title"');
+    expect(html).toContain('property="og:image"');
+    expect(html).toContain('name="twitter:card"');
+  });
+
+  it('serves the favicon as SVG', async () => {
+    const res = await app().request('/static/favicon.svg');
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('svg');
+  });
+
+  it('caches static assets but not the HTML shell', async () => {
+    const asset = await app().request('/static/styles.css');
+    const page = await app().request('/');
+
+    expect(asset.headers.get('cache-control')).toContain('max-age');
+    expect(page.headers.get('cache-control')).toContain('no-cache');
+  });
+});
+
 describe('regression: landing routes do not touch the MCP surface', () => {
   it('POST /mcp still requires the bearer token', async () => {
     const res = await app().request('/mcp', {

@@ -86,8 +86,20 @@ export function createApp({ mcpApiKey, gateway, demoGateway, demoRateLimit, logg
 
   // Public landing page + assets. Paths resolve against the process cwd (the
   // repo root both locally and on Railway), so public/ ships as-is, uncompiled.
-  app.get('/', serveStatic({ path: './public/index.html' }));
-  app.get('/static/*', serveStatic({ root: './public' }));
+  // Assets are not fingerprinted → short max-age; the HTML shell revalidates
+  // every time so a deploy is visible immediately. Cache-Control is set before
+  // delegating: the adapter builds the Response inside serveStatic, so headers
+  // added afterwards (e.g. via onFound) would be lost.
+  const landingPage = serveStatic({ path: './public/index.html' });
+  app.get('/', (c, next) => {
+    c.header('Cache-Control', 'no-cache');
+    return landingPage(c, next);
+  });
+  const staticAssets = serveStatic({ root: './public' });
+  app.get('/static/*', (c, next) => {
+    c.header('Cache-Control', 'public, max-age=3600');
+    return staticAssets(c, next);
+  });
 
   app.notFound((c) => c.json({ error: 'not_found', message: 'Route not found' }, 404));
 

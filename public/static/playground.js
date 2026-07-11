@@ -77,6 +77,7 @@
     form.addEventListener('submit', onSubmit);
 
     outputBox = el('div', 'pg-output');
+    outputBox.setAttribute('aria-live', 'polite');
     renderIdle();
 
     const panel = el('div', 'pg-panel');
@@ -275,10 +276,18 @@
         title.rel = 'noopener';
         title.target = '_blank';
       }
-      li.append(
-        title,
-        el('span', 'pg-result-meta', `${item.id} · edited ${formatDate(item.lastEditedTime)}`),
-      );
+      const meta = el('span', 'pg-result-meta', `${item.id} · edited ${formatDate(item.lastEditedTime)}`);
+      const useId = el('button', 'pg-use-id', 'open in get_page →');
+      useId.type = 'button';
+      useId.addEventListener('click', () => {
+        selectTool('get_page');
+        const input = fieldsBox.querySelector('input[name="page_id"]');
+        if (input) {
+          input.value = item.id;
+          input.focus();
+        }
+      });
+      li.append(title, meta, useId);
       list.append(li);
     }
     return list;
@@ -346,4 +355,22 @@
   }
 
   init();
+
+  /* ---------- copy buttons on the connect section ---------- */
+
+  for (const block of document.querySelectorAll('.connect-card pre')) {
+    const btn = el('button', 'copy-btn', 'copy');
+    btn.type = 'button';
+    btn.addEventListener('click', () => {
+      navigator.clipboard.writeText(block.querySelector('code').textContent).then(() => {
+        btn.textContent = 'copied ✓';
+        btn.classList.add('is-copied');
+        setTimeout(() => {
+          btn.textContent = 'copy';
+          btn.classList.remove('is-copied');
+        }, 1600);
+      });
+    });
+    block.append(btn);
+  }
 })();

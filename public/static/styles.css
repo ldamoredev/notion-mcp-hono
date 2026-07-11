@@ -30,7 +30,10 @@ body {
   font-size: 1rem;
   line-height: 1.65;
   color: var(--ink);
-  background: linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%) fixed;
+  /* no background-attachment: fixed — iOS Safari ignores it and leaves white
+     below the first viewport; a plain gradient over the full body is safe */
+  background-color: var(--bg-deep);
+  background: linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -175,6 +178,10 @@ pre code {
   overflow-x: auto;
   white-space: nowrap;
   scrollbar-width: none;
+  /* flex items refuse to shrink below content width without this — the nowrap
+     URL would otherwise force the whole page wider than small viewports */
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .hero-actions {
@@ -704,6 +711,23 @@ a.pg-result-title {
   overflow-wrap: anywhere;
 }
 
+.pg-use-id {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--accent);
+  background: none;
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  cursor: pointer;
+  margin-top: 0.2rem;
+}
+
+.pg-use-id:hover {
+  border-color: var(--accent);
+}
+
 .pg-page-title {
   font-size: 1.0625rem;
   margin-bottom: 0.6rem;
@@ -787,6 +811,32 @@ a.pg-result-title {
 
 .connect-card pre {
   margin-top: 0.5rem;
+  position: relative;
+  padding-right: 4.2rem; /* room for the floating copy button */
+}
+
+.copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+
+.copy-btn:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+.copy-btn.is-copied {
+  color: var(--green);
+  border-color: rgba(62, 207, 142, 0.45);
 }
 
 .connect-note {
