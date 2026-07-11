@@ -519,13 +519,11 @@
 
   init();
 
-  /* ---------- copy buttons on the connect section ---------- */
+  /* ---------- copy affordances ---------- */
 
-  for (const block of document.querySelectorAll('.connect-card pre')) {
-    const btn = el('button', 'copy-btn', 'copy');
-    btn.type = 'button';
+  function wireCopy(btn, getText) {
     btn.addEventListener('click', () => {
-      navigator.clipboard.writeText(block.querySelector('code').textContent).then(() => {
+      navigator.clipboard.writeText(getText()).then(() => {
         btn.textContent = 'copied ✓';
         btn.classList.add('is-copied');
         setTimeout(() => {
@@ -534,6 +532,30 @@
         }, 1600);
       });
     });
+  }
+
+  for (const block of document.querySelectorAll('.connect-card pre')) {
+    const btn = el('button', 'copy-btn', 'copy');
+    btn.type = 'button';
+    wireCopy(btn, () => block.querySelector('code').textContent);
     block.append(btn);
+  }
+
+  for (const btn of document.querySelectorAll('button[data-copy]')) {
+    wireCopy(btn, () => btn.dataset.copy);
+  }
+
+  /* ---------- heartbeat: "live" is demonstrably true ----------
+     Pings /health (excluded from server request logs) and only shows the
+     green pulse while the server actually answers. */
+
+  const beat = document.querySelector('[data-heartbeat]');
+  if (beat) {
+    const ping = () =>
+      fetch('/health')
+        .then((res) => beat.classList.toggle('is-live', res.ok))
+        .catch(() => beat.classList.remove('is-live'));
+    ping();
+    setInterval(ping, 30_000);
   }
 })();

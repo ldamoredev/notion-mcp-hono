@@ -28,7 +28,7 @@ describe('GET / (landing page)', () => {
     expect(res.headers.get('content-type')).toContain('text/html');
     const html = await res.text();
     expect(html).toContain('notion-mcp-hono');
-    expect(html).toContain('demo to production');
+    expect(html).toContain('I take AI systems');
   });
 
   it('lists the five tools', async () => {

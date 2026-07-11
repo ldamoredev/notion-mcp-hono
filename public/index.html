@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>notion-mcp-hono — a remote MCP server for Notion, built properly</title>
   <meta name="description" content="A remote MCP server for Notion: Streamable HTTP, bearer auth, TDD. TypeScript + Hono, deployed on Railway. Five tools, clean architecture, live playground." />
-  <meta name="theme-color" content="#0E1A2E" />
+  <meta name="theme-color" content="#0B1524" />
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
   <link rel="canonical" href="https://notion-mcp-hono-production.up.railway.app/" />
   <meta property="og:type" content="website" />
@@ -24,100 +24,106 @@
 </head>
 <body>
 
-<header class="site-header">
-  <div class="container header-row">
+<header class="masthead">
+  <div class="mast-grid">
     <a class="wordmark" href="/">notion-mcp-hono</a>
-    <nav class="header-nav">
-      <span class="status-pill"><span class="dot dot-green"></span>live</span>
-      <a href="https://github.com/ldamoredev/notion-mcp-hono" rel="noopener">GitHub&nbsp;↗</a>
-    </nav>
+    <span class="legend" aria-label="Drawing convention">
+      <span class="legend-item"><span class="swatch swatch-solid"></span>production</span>
+      <span class="legend-item"><span class="swatch swatch-dashed"></span>demo · external</span>
+    </span>
+    <span class="status-pill"><span class="dot" data-heartbeat></span><span class="status-word">live</span></span>
+    <a class="mast-gh" href="https://github.com/ldamoredev/notion-mcp-hono" rel="noopener">GitHub&nbsp;↗</a>
   </div>
 </header>
 
+<div class="sheet">
 <main>
 
   <!-- ============ Hero ============ -->
   <section class="hero">
-    <div class="container">
+    <div class="sec-body">
       <p class="eyebrow">remote MCP server · TypeScript + Hono · Streamable HTTP</p>
-      <h1>Notion as MCP tools,<br />running in production.</h1>
-      <p class="lead">
-        A remote MCP server for Notion, built properly: Streamable&nbsp;HTTP,
-        bearer auth, tested.
-      </p>
-      <div class="endpoint-pill">
-        <span class="dot dot-green"></span>
+      <h1>Notion as MCP&nbsp;tools,<br />running in <em>production</em>.</h1>
+      <p class="lead">Built properly: Streamable&nbsp;HTTP, bearer auth, tested.</p>
+
+      <div class="endpoint-line">
+        <span class="endpoint-prompt" aria-hidden="true">$</span>
         <code>https://notion-mcp-hono-production.up.railway.app/mcp</code>
+        <button class="copy-btn" type="button" data-copy="https://notion-mcp-hono-production.up.railway.app/mcp">copy</button>
       </div>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="#playground">Try it live</a>
-        <a class="btn btn-ghost" href="#connect">Connect it yourself</a>
-      </div>
+
+      <nav class="hero-actions">
+        <a class="action" href="#playground">Try it live <span aria-hidden="true">↓</span></a>
+        <a class="action" href="#connect">Connect it yourself <span aria-hidden="true">↓</span></a>
+      </nav>
+
       <p class="tagline">
-        “I take AI systems from demo to production.”
+        I take AI systems from <span class="u-dashed">demo</span>
+        <span class="tag-arrow" aria-hidden="true">→</span>
+        <span class="u-solid">production</span>.
         <a class="handle" href="https://github.com/ldamoredev" rel="noopener">@ldamoredev</a>
       </p>
     </div>
   </section>
 
-  <!-- ============ Architecture ============ -->
+  <!-- ============ 01 Architecture ============ -->
   <section id="architecture" class="section">
-    <div class="container">
+    <span class="sec-num" aria-hidden="true">01</span>
+    <div class="sec-body">
       <h2>Architecture</h2>
       <p class="section-sub">
         Three layers, dependencies pointing inward. The MCP layer never imports the
         Notion SDK — the integration is swappable without touching tool code.
       </p>
 
-      <figure class="diagram" role="img" aria-label="Request flow: an MCP client calls POST /mcp over Streamable HTTP with a bearer token; inside the server, the Hono transport layer passes to the MCP layer, which calls the Notion layer, which talks to the Notion API.">
-        <div class="diag-node diag-external">
-          <span class="diag-title">MCP client</span>
-          <span class="diag-desc">claude.ai · Claude Code · any Streamable HTTP client</span>
-        </div>
-
-        <div class="diag-link diag-link-dashed">
-          <code>POST /mcp · Authorization: Bearer &lt;key&gt;</code>
-        </div>
-
-        <div class="diag-server">
-          <span class="diag-server-label">notion-mcp-hono</span>
-
-          <div class="diag-node diag-layer">
-            <span class="diag-title">Transport <code class="diag-path">src/app.ts</code></span>
-            <span class="diag-desc">Hono routes · timing-safe bearer auth · body limit · JSON request logs</span>
-          </div>
-          <div class="diag-link"></div>
-          <div class="diag-node diag-layer">
-            <span class="diag-title">MCP <code class="diag-path">src/mcp/</code></span>
-            <span class="diag-desc">McpServer · 5 tool registrations · Zod input schemas · tool runner — raw errors never reach the client</span>
-          </div>
-          <div class="diag-link"></div>
-          <div class="diag-node diag-layer">
-            <span class="diag-title">Notion <code class="diag-path">src/notion/</code></span>
-            <span class="diag-desc">NotionGateway interface (domain types only) · @notionhq/client v5 adapter · markdown converted natively by Notion</span>
+      <figure class="drawing" role="img" aria-label="Request flow: an MCP client calls POST /mcp over Streamable HTTP with a bearer token; inside the server, the Hono transport layer passes to the MCP layer, which calls the Notion layer, which talks to the Notion API.">
+        <div class="draw-node draw-ext">
+          <div class="draw-main">
+            <span class="draw-title">MCP client</span>
+            <span class="draw-note">claude.ai · Claude Code · any Streamable HTTP client</span>
           </div>
         </div>
 
-        <div class="diag-link diag-link-dashed">
-          <code>Notion API · 2025-09-03</code>
+        <div class="draw-link"><code>POST /mcp · Authorization: Bearer &lt;key&gt;</code></div>
+
+        <div class="draw-node draw-core">
+          <div class="draw-main">
+            <span class="draw-title">Transport</span>
+            <span class="draw-note">Hono routes · timing-safe bearer auth · body limit · JSON request logs</span>
+          </div>
+          <code class="draw-path">src/app.ts</code>
+        </div>
+        <div class="draw-node draw-core">
+          <div class="draw-main">
+            <span class="draw-title">MCP</span>
+            <span class="draw-note">McpServer · 5 tool registrations · Zod input schemas · tool runner — raw errors never reach the client</span>
+          </div>
+          <code class="draw-path">src/mcp/</code>
+        </div>
+        <div class="draw-node draw-core">
+          <div class="draw-main">
+            <span class="draw-title">Notion</span>
+            <span class="draw-note">NotionGateway interface (domain types only) · @notionhq/client v5 adapter · markdown converted natively by Notion</span>
+          </div>
+          <code class="draw-path">src/notion/</code>
         </div>
 
-        <div class="diag-node diag-external">
-          <span class="diag-title">Notion workspace</span>
-          <span class="diag-desc">pages · databases · markdown in, markdown out</span>
-        </div>
+        <div class="draw-link"><code>Notion API · 2025-09-03</code></div>
 
-        <figcaption class="diagram-legend">
-          <span><span class="legend-swatch legend-solid"></span>solid — shipped code</span>
-          <span><span class="legend-swatch legend-dashed"></span>dashed — external systems</span>
-        </figcaption>
+        <div class="draw-node draw-ext">
+          <div class="draw-main">
+            <span class="draw-title">Notion workspace</span>
+            <span class="draw-note">pages · databases · markdown in, markdown out</span>
+          </div>
+        </div>
       </figure>
     </div>
   </section>
 
-  <!-- ============ Tools ============ -->
+  <!-- ============ 02 Tools ============ -->
   <section id="tools" class="section">
-    <div class="container">
+    <span class="sec-num" aria-hidden="true">02</span>
+    <div class="sec-body">
       <h2>Five tools, exactly</h2>
       <p class="section-sub">
         Scope stays small and excellent. Every input is Zod-validated with size limits;
@@ -125,99 +131,79 @@
         as actionable messages, never raw API errors.
       </p>
 
-      <div class="tool-grid">
-        <article class="tool-card">
-          <header>
-            <h3><code>search_pages</code></h3>
-            <span class="badge badge-read">read-only</span>
-          </header>
-          <p>Searches pages across the workspace by title. The discovery step before
-             <code>get_page</code> or <code>append_blocks</code>.</p>
-          <ul class="schema">
-            <li><code>query</code><span>string</span></li>
-            <li><code>limit?</code><span>int · 1–100</span></li>
-          </ul>
-        </article>
+      <div class="datasheet">
+        <div class="ds-head" aria-hidden="true">
+          <span>tool</span><span>access</span><span>description</span><span>input</span>
+        </div>
 
-        <article class="tool-card">
-          <header>
-            <h3><code>get_page</code></h3>
-            <span class="badge badge-read">read-only</span>
-          </header>
-          <p>Retrieves one page as clean markdown, with its ID, title, URL, and a
-             truncation flag.</p>
-          <ul class="schema">
-            <li><code>page_id</code><span>string</span></li>
-          </ul>
-        </article>
+        <div class="ds-row ds-read">
+          <code class="ds-name">search_pages</code>
+          <span class="ds-badge">read-only</span>
+          <p class="ds-desc">Searches pages across the workspace by title. The discovery step
+             before <code>get_page</code> or <code>append_blocks</code>.</p>
+          <code class="ds-schema">query: string<br />limit?: int 1–100</code>
+        </div>
 
-        <article class="tool-card">
-          <header>
-            <h3><code>query_database</code></h3>
-            <span class="badge badge-read">read-only</span>
-          </header>
-          <p>Queries a database with Notion filters and sorts; rows come back simplified
-             to flat JSON, with cursor-based pagination.</p>
-          <ul class="schema">
-            <li><code>database_id</code><span>string</span></li>
-            <li><code>filter?</code><span>Notion filter object</span></li>
-            <li><code>sorts?</code><span>Notion sorts array</span></li>
-            <li><code>page_size?</code><span>int · 1–100</span></li>
-            <li><code>start_cursor?</code><span>string</span></li>
-          </ul>
-        </article>
+        <div class="ds-row ds-read">
+          <code class="ds-name">get_page</code>
+          <span class="ds-badge">read-only</span>
+          <p class="ds-desc">Retrieves one page as clean markdown, with its ID, title, URL,
+             and a truncation flag.</p>
+          <code class="ds-schema">page_id: string</code>
+        </div>
 
-        <article class="tool-card">
-          <header>
-            <h3><code>create_page</code></h3>
-            <span class="badge badge-write">write</span>
-          </header>
-          <p>Creates a page under an existing parent — a child page, or a new row in a
-             database — optionally with initial markdown content.</p>
-          <ul class="schema">
-            <li><code>parent_type</code><span>"page" | "database"</span></li>
-            <li><code>parent_id</code><span>string</span></li>
-            <li><code>title</code><span>string</span></li>
-            <li><code>markdown?</code><span>string</span></li>
-          </ul>
-        </article>
+        <div class="ds-row ds-read">
+          <code class="ds-name">query_database</code>
+          <span class="ds-badge">read-only</span>
+          <p class="ds-desc">Queries a database with Notion filters and sorts; rows come back
+             simplified to flat JSON, with cursor-based pagination.</p>
+          <code class="ds-schema">database_id: string<br />filter?: object · sorts?: array<br />page_size?: int 1–100 · start_cursor?: string</code>
+        </div>
 
-        <article class="tool-card">
-          <header>
-            <h3><code>append_blocks</code></h3>
-            <span class="badge badge-write">write</span>
-          </header>
-          <p>Appends Notion-compatible markdown to the end of an existing page.</p>
-          <ul class="schema">
-            <li><code>page_id</code><span>string</span></li>
-            <li><code>markdown</code><span>string</span></li>
-          </ul>
-        </article>
-      </div>
-    </div>
-  </section>
+        <div class="ds-row ds-write">
+          <code class="ds-name">create_page</code>
+          <span class="ds-badge">write</span>
+          <p class="ds-desc">Creates a page under an existing parent — a child page, or a new
+             row in a database — optionally with initial markdown content.</p>
+          <code class="ds-schema">parent_type: "page" | "database"<br />parent_id: string · title: string<br />markdown?: string</code>
+        </div>
 
-  <!-- ============ Playground ============ -->
-  <section id="playground" class="section">
-    <div class="container">
-      <h2>Live playground</h2>
-      <p class="section-sub">
-        These requests run the same tool code the MCP endpoint runs — server-side, against a
-        <strong>dedicated demo workspace</strong>. Read-only tools only, rate-limited per
-        visitor. Next to each result you get the JSON-RPC payload an MCP client would send.
-      </p>
-
-      <div class="playground" data-playground>
-        <div class="pg-loading" data-pg-boot>
-          <span class="dot dot-green"></span> Loading tools…
+        <div class="ds-row ds-write">
+          <code class="ds-name">append_blocks</code>
+          <span class="ds-badge">write</span>
+          <p class="ds-desc">Appends Notion-compatible markdown to the end of an existing page.</p>
+          <code class="ds-schema">page_id: string<br />markdown: string</code>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ============ Connect ============ -->
+  <!-- ============ 03 Playground ============ -->
+  <section id="playground" class="section">
+    <span class="sec-num" aria-hidden="true">03</span>
+    <div class="sec-body">
+      <h2>Live playground</h2>
+      <p class="section-sub">
+        These requests run the same tool code the MCP endpoint runs — server-side, against a
+        <strong>dedicated demo workspace</strong>. Next to each result you get the JSON-RPC
+        payload an MCP client would send.
+      </p>
+
+      <div class="playground">
+        <span class="pg-titleblock">test bench — demo workspace · read-only · 10 req/min</span>
+        <div data-playground>
+          <div class="pg-loading" data-pg-boot>
+            <span class="dot dot-green"></span> Loading tools…
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 04 Connect ============ -->
   <section id="connect" class="section">
-    <div class="container">
+    <span class="sec-num" aria-hidden="true">04</span>
+    <div class="sec-body">
       <h2>Connect it yourself</h2>
       <p class="section-sub">
         Every request to <code>/mcp</code> requires
@@ -258,16 +244,13 @@
 </main>
 
 <footer class="site-footer">
-  <div class="container footer-row">
-    <p>
-      <a href="https://github.com/ldamoredev/notion-mcp-hono" rel="noopener">github.com/ldamoredev/notion-mcp-hono</a>
-      · MIT
-    </p>
-    <p class="footer-meta">TypeScript · Hono · MCP SDK · Railway — built test-first by
-      <a href="https://github.com/ldamoredev" rel="noopener">@ldamoredev</a>
-    </p>
+  <div class="footer-grid">
+    <p><a href="https://github.com/ldamoredev/notion-mcp-hono" rel="noopener">github.com/ldamoredev/notion-mcp-hono</a> · MIT</p>
+    <p class="footer-meta">TypeScript · Hono · MCP SDK · Railway — built test-first</p>
+    <p class="footer-meta"><a href="https://github.com/ldamoredev" rel="noopener">@ldamoredev</a></p>
   </div>
 </footer>
+</div>
 
 </body>
 </html>
