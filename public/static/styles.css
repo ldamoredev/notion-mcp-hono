@@ -1109,9 +1109,13 @@ a.pg-result-title:hover {
   font-weight: 600;
 }
 
-.connect-card pre {
+.connect-card .codeblock {
   margin-top: 0.5rem;
   position: relative;
+}
+
+.connect-card .codeblock pre {
+  margin-top: 0;
   padding-right: 5rem; /* room for the copy end-cap */
 }
 
@@ -1141,13 +1145,13 @@ a.pg-result-title:hover {
   flex: none;
 }
 
-/* inside code blocks the button becomes an opaque end-cap: full height,
-   attached to the right edge, so scrolling code never slides under it */
-.connect-card pre .copy-btn {
+/* the end-cap anchors to the wrapper (not the scrolling pre), so it stays
+   pinned to the right edge no matter how far the code is scrolled */
+.connect-card .codeblock .copy-btn {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   border: none;
   border-left: 1px solid var(--glass-border-soft);

@@ -534,11 +534,17 @@
     });
   }
 
+  // The button must live OUTSIDE the pre: pre scrolls horizontally, and
+  // absolutely-positioned children of a scroll container travel with the
+  // content. The wrapper stays put, so the end-cap does too.
   for (const block of document.querySelectorAll('.connect-card pre')) {
+    const wrap = el('div', 'codeblock');
+    block.replaceWith(wrap);
+    wrap.append(block);
     const btn = el('button', 'copy-btn', 'copy');
     btn.type = 'button';
     wireCopy(btn, () => block.querySelector('code').textContent);
-    block.append(btn);
+    wrap.append(btn);
   }
 
   for (const btn of document.querySelectorAll('button[data-copy]')) {
